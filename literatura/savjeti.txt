@@ -1,0 +1,112 @@
+// Idealni plin => brzine čestica jedine su značajne veličine za promatranje energije
+// Argon => trebaju mi i pozicije i brzine
+
+// 1. Uspostavimo početno mikrostanje.
+// 2. Napravimo slučajnu probnu promjenu u mikrostanju. Primjerice, izaberemo neki
+// spin na slučajan način i preokrenemo ga.
+// 3. Zatim izračunamo promjenu energije zbog probne promjene mikrostanja, ∆E ≡
+// Eproba −Estara.
+// 4. Ako je ∆E manja ili jednaka nuli, prihvatimo probnu promjenu i prelazimo na 8.
+// korak.
+// 5. Ako je ∆E ve ́ca od nule, izraˇcunamo veliˇcinu w = e−β∆E.
+// 6. Generiramo sluˇcajni broj r u jediniˇcnom intervalu.
+// 7. Ako je r ≤ w prihva ́camo novo mikrostanje; u suprotnom odbacujemo probni
+// pomak i zadržavamo staro stanje.
+// 8. Odredimo vrijednosti željenih fizikalnih veliˇcina.
+// 9. Ponavljamo korake (2) do (8) kako bismo skupili dovoljno mikrostanja.
+// 10. Periodiˇcno raˇcunamo prosjeke preko mikrostanja.
+// Koraci 2 do 7 daju uvjetnu vjerojatnost da je sustav u mikrostanju {sj},
+// ako je u prethodnom koraku bio u mikrostanju {si}
+// trebamo uzorkovati koordinate r1,r2,..,rN čestica i volumen sustava V .
+
+// U NPT ansamblu, vjerojatnost mikrostanja je proporcionalna sa e−(E+PV )
+// S obzirom da je tlak fiksan, probna konfiguracija može se generirati iz trenutne konfiguracije ili
+// slučajnim pomakom čestice ili slučajnom promjenom volumena, primjerice V →V +δ(2r−1),
+// gdje je r slučajno izabran iz jednolike funkcije razdiobe na jediničnom intervalu, a δ je maksi-
+// malna promjena volumena. Probna konfiguracija se prihvaca ukoliko je ∆W ≤ 0 i s vjerojat-
+// nosti e−∆W ukoliko je ∆W > 0. Nije nužno, a ni efikasno mijenjati volumen nakon svakog
+// Monte Carlo koraka po čestici
+
+// Vrijednosti udaljenosti i energije u
+// tipiˇcnim teku ́cinama za koje je prikladno koristiti Lennard-Jones model interakcije vrlo su male
+// u SI jedinicama. Stoga se najˇceš ́ce biraju σ i  kao jedinice za udaljenost i energiju. Tako  ̄der se
+// bira za jedinicu mase masa jednog atoma m i zatim se sve druge veliˇcine izražavaju preko σ, i
+// m. Primjerice, za argon je σ = 3.4 ×10−10 m, e = 1.65 ×10−21 J i m = 6.69 ×10−26 kg.
+// {
+//   float potE;
+//   int i, j;
+//   for (i = 0; i < N; i++)
+//   {
+//     for (j = 0; j < N; j++)
+//     {
+//       if (i != j)
+//       {
+//         printf("%f\n", x[indeksWalkera][i]);
+//         printf("%f\n", x[indeksWalkera][j]);
+//         potE += lennardJones(x[][indeksWalkera]);
+//       }
+//     }
+//   }
+//   return potE;
+// }
+
+// for (ib = 1; ib <= Nb; ib++) // po bloku
+// {
+// po blokovima za usrednjavanje
+// novi položaj određujemo uvijek na osnovu prethodnog pa su dobiveni
+// podaci u nekoj mjeri korelirani
+// kako bismo izbjegli utjecaj korelacija na proračun standardne devijacije
+// i sličnih veličina, podatke ćemo blokirati.
+// Blokiranje provodimo dijeleći cjelokupnu simulaciju na blokove gdje
+// svaki blok sadrži nekoliko (100, 1000, 5000, ...) koraka
+// nakon svakog bloka pohranjujemo:
+// ▶ indeks bloka ib
+// ▶ ⟨f⟩ - usrednjenu vrijednost veličine f koju smo akumulirali od početka
+// cijele simulacije
+// ▶ ⟨f⟩b - usrednjenu vrijednost veličine f koju smo akumulirali samo
+// unutar jednog bloka
+// [12:58, 09 / 07 / 2023] אנה: // računamo potencijalnu energiju
+// potEtemp = 0;
+// for (a = 0; a < N; a++)
+// {
+//   for (b = a + 1; b < N; b++)
+//   {
+//     printf("a=%d, i=%d, %f\n", a, i, x[i][a]);
+//     printf("%f\n", lennardJones(x[i][a], x[i][b], y[i][a], y[i][b]));
+//     potEtemp += lennardJones(x[i][a], x[i][b], y[i][a], y[i][b]);
+//   }
+// }
+
+// printf("%f\n", potE / 2);
+
+// 3. Izraˇcunamo ∆E, promjenu potencijalne energije sustava zbog probnog pomaka.
+// 4. Ako je ∆E ≤0 nova konfiguracija se prihva ́ca i odlazi se na 8. korak
+// 5. Ako je ∆E > 0, raˇcunamo w = e−β∆E.
+// 6. Generiramo iz jedolike raspodjele sluˇcajni broj r u segmentu [0,1].
+// 7. Ako je r ≤ w, prihva ́camo probni pomak; u suprotnom zadržavamo prethodno
+// mikrostanje.
+// 8. Određujemo željene fizikalne veliˇcine.
+// 9. Ponavljamo korake (2) do (8) kako bismo dobili dovoljan broj mikrostanja.
+// 10. Sakupljamo podatke koji su nam potrebni za prosjeke traženih veliˇcina
+
+// računaš novo neš i provjeravaš jel random broj spada u to neš...
+
+// vjerojatnost mikrostanja u NPT ansamblu proporcionalna je s e−(E(i)+PV ) // E JE SAMO UNUTARNJA ENRGIJA ACCORDING TO WIKIPEDIA!!
+// e−W = e−βPV −βU({s})+N ln V
+
+// postotak_prihvacanja++;
+// [13:08, 09/07/2023] אנה: Najčešće je potrebno mnogo uzoraka slučajnog hoda prije postizanja asimptotske raspod-
+// jele vjerojatnosti p(x). Postavlja se pitanje kako izabrati maksimalnu veličinu koraka δ. Ako
+// je δ prevelik, samo  ́ce mali broj probnih koraka biti prihvaćen pa  ́ce uzorkovanje od p(x) biti
+// neefikasno. S druge strane, ako je δ premalen, veliki postotak probnih koraka bit  ́ce prihva ́cen
+// pa  ́ce opet uzorkovanje p(x) biti neefikasno. Grubi kriterij za odabir veličine koraka δ je da ot-
+// prilike jedna tre ́cina do jedna polovica koraka trebaju biti prihva ́ceni. Tako  ̄der je dobro izabrati
+// i x0 tako da raspodjela xi dostigne asimptotsku raspodjelu ˇcim je prije mogu ́ce. Oˇciti je izbor
+// poˇceti sluˇcajni hod na vrijednosti od x za koju je p(x) znaˇcajan
+// [13:08, 09/07/2023] אנה: 1. Izabere se probni položaj xproba = xi+ δi, gdje je δi sluˇcaji broj iz jednolike raspod-
+// jele na segmentu [−δ,δ].
+// 2. Izraˇcuna se w = p(xproba)/p(xi).
+// i. Ako je w ≥1, promjena se prihva ́ca, odnosno xi+1 = xproba.
+// ii. Ako je w < 1 generira se sluˇcajni broj r.
+// iii. Ako je r ≤w, promjena se prihva ́ca i xi+1 = xproba.
+// iv. Ako se promjena ne prihvati onda je xi+1 = xi
