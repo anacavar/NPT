@@ -206,9 +206,7 @@ int main(void)
       Up[j] = 4 * epsilon * Sum_Ulj_reduced(x, y, z, sigma, j); // Upot = Sum(i=1,...,N)Sum(j=i+1,...,N) 4*epsilon*((sigma/r_ij)^12-(sigma/r_ij)^6)
       U[j] = Uk[j] + Up[j];                                     // U_ukupna = Ukin + Upot
       T[j] = 0.6666 * Uk[j] / k_B / N;                          // T = 2/3 Ukin /(kB*N)
-      // printf("%f\n", T[j] * 1000000);
       press[j] = 1 / V[j] * (N * k_B * T[j] - epsilon / (3 * k_B * T[j]) * Sum_rf_reduced(x, y, z, sigma, j));
-
       // delte
       delta_V = V[j] - V_old;
       delta_U = U[j] - U_old;
@@ -290,7 +288,7 @@ int main(void)
     U_mean = U_mean / Nw;
     T_mean = T_mean / Nw;
     p_mean = p_mean / Nw;
-    fprintf(data, "%d\t%f\t%f\t%f\t%f\t%f\n", i, L[1], V_mean, U_mean, T_mean * 100000, p_mean);
+    fprintf(data, "%d\t%f\t%f\t%f\t%f\t%f\n", i, L[1], V_mean, U_mean, T_mean, p_mean);
     // }
 #pragma endregion
   }
