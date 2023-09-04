@@ -1,6 +1,14 @@
 // Idealni plin => brzine čestica jedine su značajne veličine za promatranje energije
 // Argon => trebaju mi i pozicije i brzine
 
+// svaki blok sadrži nekoliko (100, 1000, 5000, ...) koraka
+// nakon svakog bloka pohranjujemo:
+// ▶ indeks bloka ib
+// ▶ ⟨f⟩ - usrednjenu vrijednost veličine f koju smo akumulirali od početka
+// cijele simulacije
+// ▶ ⟨f⟩b - usrednjenu vrijednost veličine f koju smo akumulirali samo
+// unutar jednog bloka
+
 // 1. Uspostavimo početno mikrostanje.
 // 2. Napravimo slučajnu probnu promjenu u mikrostanju. Primjerice, izaberemo neki
 // spin na slučajan način i preokrenemo ga.

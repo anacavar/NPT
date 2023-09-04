@@ -7,9 +7,9 @@
 
 #define N 100    // broj čestica
 #define Nw 10    // broj šetača
-#define Nk 1000  // broj koraka
-#define Nb 11    // broj blokova
-#define Nbskip 1 // broj blokova koje preskačemo radi stabilizacije
+#define Nk 100   // broj koraka
+#define Nb 10    // broj blokova
+#define Nbskip 0 // broj blokova koje preskačemo radi stabilizacije
 
 float lennardJones_reduced(float x1, float x2, float y1, float y2, float z1, float z2, float sigma)
 {
@@ -107,13 +107,15 @@ int main(void)
   float V_old, L_old, U_old, Up_old, Uk_old, T_old, press_old;  // za reversat promjenu u slučaju odbacivanja
   float p, ran;                                                 // vjerojatnost prihvaćanja promjene, random broj pri određivanju odbacivanja/prihvaćanja koraka
   int N_change_volume = 5;
-  float V_mean, U_mean, p_mean, T_mean; // vrijednosti u koraku usrednjene po svim šetačima
+  float L_mean, V_mean, U_mean, p_mean, T_mean; // vrijednosti u koraku usrednjene po svim šetačima
   int accepted = 0, rejected = 0;
   float ratio;
+  float block_avg_L, block_avg_V, block_avg_U, block_avg_T, block_avg_p; // usrednjivanje po bloku
 #pragma endregion
 
-  FILE *data;
+  FILE *data, *block_data;
   data = fopen("data.txt", "w");
+  block_data = fopen("block_data.txt", "w");
 
   // inicijalizacija čestica
   for (i = 1; i <= Nw; i++) // po šetačima
@@ -141,167 +143,185 @@ int main(void)
     printf("T=%f; p=%f; Upot=%f; Ukin=%f; Uuk=%f; V=%f\n", T[i], press[i], Up[i], Uk[i], U[i], V[i]);
   }
 
-  // for (ib = 1; ib <= Nb; ib++) // po bloku
-  // {
-  for (i = 1; i <= Nk; i++) // po koracima
+  for (ib = 1; ib <= Nb; ib++) // po bloku
   {
-    for (j = 1; j <= Nw; j++) // po šetačima - mikrostanja - šetači po 3N dimenzionalnom faznom prostoru
+    block_avg_L = 0;
+    block_avg_V = 0;
+    block_avg_U = 0;
+    block_avg_T = 0;
+    block_avg_p = 0;
+    for (i = 1; i <= Nk; i++) // po koracima
     {
-      // printf("prije: L/10^8=%f; V/L0^3=%f; T=%f; U=%f; Upot=%f; Ukin=%f\n", L[j] / L0, V[j] / (L0 * L0 * L0), T[j], U[j], Up[j], Uk[j]);
-      V_old = V[j];
-      L_old = L[j];
-      Uk_old = Uk[j];
-      Up_old = Up[i];
-      U_old = U[j];
-      T_old = T[j];
-      press_old = press[j];
-      for (k = 1; k <= N; k++) // po česticama
+      for (j = 1; j <= Nw; j++) // po šetačima - mikrostanja - šetači po 3N dimenzionalnom faznom prostoru
       {
-        dx = (ran1(&idum) * 2 - 1) * dxyzMax;
-        dy = (ran1(&idum) * 2 - 1) * dxyzMax;
-        dz = (ran1(&idum) * 2 - 1) * dxyzMax;
-        dv = (ran1(&idum) * 2 - 1) * dvMax;
-        x_old[k] = x[j][k];
-        y_old[k] = y[j][k];
-        z_old[k] = z[j][k];
-        v_old[k] = v[j][k];
-        x[j][k] += dx;
-        y[j][k] += dy;
-        z[j][k] += dz;
-        v[j][k] += dv;
-        // brzina ne smije biti negativna (jer odražava apsolutnu vrijednost)
-        if (v[j][k] < 0)
-          v[j][k] = -v[j][k];
-        // rubni uvjeti
-        if (x[j][k] < 0)
-          x[j][k] = -x[j][k];
-        if (x[j][k] > L[j])
-          x[j][k] = L[j] - (x[j][k] - L[j]);
-        if (y[j][k] < 0)
-          y[j][k] = -y[j][k];
-        if (y[j][k] > L[j])
-          y[j][k] = L[j] - (y[j][k] - L[j]);
-        if (z[j][k] < 0)
-          z[j][k] = -z[j][k];
-        if (z[j][k] > L[j])
-          z[j][k] = L[j] - (z[j][k] - L[j]);
-      }
-
-      if (i % N_change_volume == 0) // SVAKI N-ti korak promijeni i volumen...
-      {
-        dL = (ran1(&idum) * 2 - 1) * dLMax;
-        L[j] = L[j] + dL;
-        if (L[j] < 0) // duljina stranice ne može biti negativna
-          L[j] = -L[j];
-        V[j] = L[j] * L[j] * L[j];
+        L_old = L[j];
+        V_old = V[j];
+        Uk_old = Uk[j];
+        Up_old = Up[i];
+        U_old = U[j];
+        T_old = T[j];
+        press_old = press[j];
         for (k = 1; k <= N; k++) // po česticama
         {
-          x[j][k] = L[j] / L_old * x[j][k]; // skaliranje svih x koordinata faktorom L'/L
-          y[j][k] = L[j] / L_old * y[j][k]; // skaliranje svih y koordinata faktorom L'/L
-          z[j][k] = L[j] / L_old * z[j][k]; // skaliranje svih z koordinata faktorom L'/L
+          dx = (ran1(&idum) * 2 - 1) * dxyzMax;
+          dy = (ran1(&idum) * 2 - 1) * dxyzMax;
+          dz = (ran1(&idum) * 2 - 1) * dxyzMax;
+          dv = (ran1(&idum) * 2 - 1) * dvMax;
+          x_old[k] = x[j][k];
+          y_old[k] = y[j][k];
+          z_old[k] = z[j][k];
+          v_old[k] = v[j][k];
+          x[j][k] += dx;
+          y[j][k] += dy;
+          z[j][k] += dz;
+          v[j][k] += dv;
+          // brzina ne smije biti negativna (jer odražava apsolutnu vrijednost)
+          if (v[j][k] < 0)
+            v[j][k] = -v[j][k];
+          // rubni uvjeti
+          if (x[j][k] < 0)
+            x[j][k] = -x[j][k];
+          if (x[j][k] > L[j])
+            x[j][k] = L[j] - (x[j][k] - L[j]);
+          if (y[j][k] < 0)
+            y[j][k] = -y[j][k];
+          if (y[j][k] > L[j])
+            y[j][k] = L[j] - (y[j][k] - L[j]);
+          if (z[j][k] < 0)
+            z[j][k] = -z[j][k];
+          if (z[j][k] > L[j])
+            z[j][k] = L[j] - (z[j][k] - L[j]);
         }
-      }
-      // ponovno računanje termodinamičkih vrijednosti
-      Uk[j] = 0.5 * mass * Sum_v2(v, j);                        // Ukin = Sum(i=1,...,N) 1/2*mv_i^2
-      Up[j] = 4 * epsilon * Sum_Ulj_reduced(x, y, z, sigma, j); // Upot = Sum(i=1,...,N)Sum(j=i+1,...,N) 4*epsilon*((sigma/r_ij)^12-(sigma/r_ij)^6)
-      U[j] = Uk[j] + Up[j];                                     // U_ukupna = Ukin + Upot
-      T[j] = 0.6666 * Uk[j] / k_B / N;                          // T = 2/3 Ukin /(kB*N)
-      press[j] = 1 / V[j] * (N * k_B * T[j] - epsilon / (3 * k_B * T[j]) * Sum_rf_reduced(x, y, z, sigma, j));
-      // delte
-      delta_V = V[j] - V_old;
-      delta_U = U[j] - U_old;
-      delta_H = delta_U + press[j] * delta_V - k_B * T[j] * N * log(V[j] / V_old);
-      delta_W = 1 / (k_B * T[j]) * delta_H;
+
+        if (i % N_change_volume == 0) // SVAKI N-ti korak promijeni i volumen...
+        {
+          dL = (ran1(&idum) * 2 - 1) * dLMax;
+          L[j] = L[j] + dL;
+          if (L[j] < 0) // duljina stranice ne može biti negativna
+            L[j] = -L[j];
+          V[j] = L[j] * L[j] * L[j];
+          for (k = 1; k <= N; k++) // po česticama
+          {
+            x[j][k] = L[j] / L_old * x[j][k]; // skaliranje svih x koordinata faktorom L'/L
+            y[j][k] = L[j] / L_old * y[j][k]; // skaliranje svih y koordinata faktorom L'/L
+            z[j][k] = L[j] / L_old * z[j][k]; // skaliranje svih z koordinata faktorom L'/L
+          }
+        }
+        // ponovno računanje termodinamičkih vrijednosti
+        Uk[j] = 0.5 * mass * Sum_v2(v, j);                        // Ukin = Sum(i=1,...,N) 1/2*mv_i^2
+        Up[j] = 4 * epsilon * Sum_Ulj_reduced(x, y, z, sigma, j); // Upot = Sum(i=1,...,N)Sum(j=i+1,...,N) 4*epsilon*((sigma/r_ij)^12-(sigma/r_ij)^6)
+        U[j] = Uk[j] + Up[j];                                     // U_ukupna = Ukin + Upot
+        T[j] = 0.6666 * Uk[j] / k_B / N;                          // T = 2/3 Ukin /(kB*N)
+        press[j] = 1 / V[j] * (N * k_B * T[j] - epsilon / (3 * k_B * T[j]) * Sum_rf_reduced(x, y, z, sigma, j));
+        // delte
+        delta_V = V[j] - V_old;
+        delta_U = U[j] - U_old;
+        delta_H = delta_U + press[j] * delta_V - k_B * T[j] * N * log(V[j] / V_old);
+        delta_W = 1 / (k_B * T[j]) * delta_H;
 #pragma region // Metropolis algoritam
-      if (delta_W > 0)
-      {
-        p = exp(-delta_W); // vjerojatnost prihvaćanja promjene
-        ran = ran1(&idum);
-        if (ran < p)
+        if (delta_W > 0)
+        {
+          p = exp(-delta_W); // vjerojatnost prihvaćanja promjene
+          ran = ran1(&idum);
+          if (ran < p)
+          {
+            accepted++;
+            ratio = (float)accepted / (float)(accepted + rejected);
+            // printf("%f\n", ratio);
+          }
+          else // odbacivanje promjena
+          {
+            rejected++;
+            ratio = (float)accepted / (float)(accepted + rejected);
+            // printf("%f\n", ratio);
+            // resetiranje vrijednosti
+            L[i] = L_old;
+            V[j] = V_old;
+            Uk[j] = Uk_old;
+            Up[j] = Up_old;
+            U[j] = U_old;
+            T[j] = T_old;
+            press[j] = press_old;
+            for (k = 1; k <= N; k++) // po česticama
+            {
+              x[j][k] = x_old[k];
+              y[j][k] = y_old[k];
+              z[j][k] = z_old[k];
+              v[j][k] = v_old[k];
+            }
+          }
+        }
+        else
         {
           accepted++;
           ratio = (float)accepted / (float)(accepted + rejected);
-          printf("%f\n", ratio);
+          // printf("%f\n", ratio);
         }
-        else // odbacivanje promjena
-        {
-          rejected++;
-          ratio = (float)accepted / (float)(accepted + rejected);
-          printf("%f\n", ratio);
-          // resetiranje vrijednosti
-          L[i] = L_old;
-          V[j] = V_old;
-          Uk[j] = Uk_old;
-          Up[j] = Up_old;
-          U[j] = U_old;
-          T[j] = T_old;
-          press[j] = press_old;
-          for (k = 1; k <= N; k++) // po česticama
-          {
-            x[j][k] = x_old[k];
-            y[j][k] = y_old[k];
-            z[j][k] = z_old[k];
-            v[j][k] = v_old[k];
-          }
-        }
+#pragma endregion
+        // kraj petlje šetača
       }
-      else
+      // // Maksimalnu duljinu koraka podesavamo kako bi prihvacanje bilo oko 50%
+      if (ratio > 0.5)
       {
-        accepted++;
-        ratio = (float)accepted / (float)(accepted + rejected);
-        printf("%f\n", ratio);
+        dxyzMax = dxyzMax * 1.05;
+        dvMax = dvMax * 1.05;
+        if (i % N_change_volume == 0)
+          dLMax = dLMax * 1.05;
       }
-#pragma endregion
-      // kraj petlje šetača
-    }
-    // // Maksimalnu duljinu koraka podesavamo kako bi prihvacanje bilo oko 50%
-    if (ratio > 0.5)
-    {
-      dxyzMax = dxyzMax * 1.05;
-      dvMax = dvMax * 1.05;
-      if (i % N_change_volume == 0)
-        dLMax = dLMax * 1.05;
-    }
-    if (ratio < 0.5)
-    {
-      dxyzMax = dxyzMax * 0.95;
-      dvMax = dvMax * 0.95;
-      if (i % N_change_volume == 0)
-        dLMax = dLMax * 0.95;
-    }
-// za svaki korak zapisujemo parametre, usrednjene po šetačima
+      if (ratio < 0.5)
+      {
+        dxyzMax = dxyzMax * 0.95;
+        dvMax = dvMax * 0.95;
+        if (i % N_change_volume == 0)
+          dLMax = dLMax * 0.95;
+      }
+      // za svaki korak zapisujemo parametre, usrednjene po šetačima
+      if (ib >= Nbskip) // ako je završena stabilizacija
+      {
 #pragma region // CALCULATING THE MEANS
-    // if (ib > Nbskip) // ako je završena stabilizacija
-    // {
-    V_mean = 0;
-    U_mean = 0;
-    T_mean = 0;
-    p_mean = 0;
-    for (j = 1; j <= Nw; j++)
-    {
-      V_mean += V[j];
-      U_mean += U[j];
-      T_mean += T[j];
-      p_mean += press[j];
-    }
-    V_mean = V_mean / Nw;
-    U_mean = U_mean / Nw;
-    T_mean = T_mean / Nw;
-    p_mean = p_mean / Nw;
-    fprintf(data, "%d\t%f\t%f\t%f\t%f\t%f\n", i, L[1], V_mean, U_mean, T_mean, p_mean);
-    // }
+        L_mean = 0;
+        V_mean = 0;
+        U_mean = 0;
+        T_mean = 0;
+        p_mean = 0;
+        for (j = 1; j <= Nw; j++)
+        {
+          L_mean += L[j];
+          V_mean += V[j];
+          U_mean += U[j];
+          T_mean += T[j];
+          p_mean += press[j];
+        }
+        L_mean = L_mean / Nw;
+        V_mean = V_mean / Nw;
+        U_mean = U_mean / Nw;
+        T_mean = T_mean / Nw;
+        p_mean = p_mean / Nw;
+        fprintf(data, "%d\t%f\t%f\t%f\t%f\t%f\n", ib * Nk + i, L[1], V_mean, U_mean, T_mean, p_mean);
+        // za svaki korak dodaj srednju vrijednost šetača blok average sumi
+        block_avg_L += L_mean;
+        block_avg_V += V_mean;
+        block_avg_U += U_mean;
+        block_avg_T += T_mean;
+        block_avg_p += p_mean;
 #pragma endregion
+      }
+      // kraj korak levela
+    }
+    if (ib >= Nbskip) // ako je završena stabilizacija
+    {
+      block_avg_L = block_avg_L / Nk;
+      block_avg_V = block_avg_V / Nk;
+      block_avg_U = block_avg_U / Nk;
+      block_avg_T = block_avg_T / Nk;
+      block_avg_p = block_avg_p / Nk;
+      fprintf(block_data, "%d\t%f\t%f\t%f\t%f\t%f\n", ib * Nk, block_avg_L, block_avg_V, block_avg_U, block_avg_T, block_avg_p);
+      // printf("%d\t%f\t%f\t%f\t%f\t%f\n", ib, block_avg_L, block_avg_V, block_avg_U, block_avg_T, block_avg_p);
+    }
   }
-  // svaki blok sadrži nekoliko (100, 1000, 5000, ...) koraka
-  // nakon svakog bloka pohranjujemo:
-  // ▶ indeks bloka ib
-  // ▶ ⟨f⟩ - usrednjenu vrijednost veličine f koju smo akumulirali od početka
-  // cijele simulacije
-  // ▶ ⟨f⟩b - usrednjenu vrijednost veličine f koju smo akumulirali samo
-  // unutar jednog bloka
-  // }
-  // printf("%f\n", ratio);
+  printf("Final ratio: %f\n", ratio);
 
   fclose(data);
+  fclose(block_data);
   return 0;
 }
