@@ -13,14 +13,14 @@
 
 float lennardJones_reduced(float x1, float x2, float y1, float y2, float z1, float z2, float sigma)
 {
-  float a;
+  float Ulj_red;
   float x = sigma / sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2) + pow((z2 - z1), 2)); // x = sigma/r
   x = pow(x, 6);                                                                     // x = (sigma/r)**6
   if (x <= 1)                                                                        // ignoriraj parove koji su preblizu
-    a = 4 * (pow(x, 2) - x);
+    Ulj_red = (pow(x, 2) - x);
   else
-    a = 0;
-  return a;
+    Ulj_red = 0;
+  return Ulj_red;
 }
 
 float rxLJforce_reduced(float x1, float x2, float y1, float y2, float z1, float z2, float sigma)
@@ -77,13 +77,13 @@ int main(void)
   int i, j, k, ib;
   long idum = -1234;
   // konstante:
-  float sigma = 1;                                           // 3.4 * 10^(-10) [m]
-  float epsilon = 1;                                         // 1.65 * 10^(-21) [J]
-  float mass = 1;                                            // 6.69 * 10^(-26) [kg]
-  float rho = 1.0481 * pow(10, -3) * mass / pow(sigma, 3);   // 1.784 [kg/m^3]
-  float L0 = 10 * sigma * cbrt(N / 1.0481);                  // L0 = cbrt(N*m/rho)
-  float v_avg = 6.3675 * pow(10, -3) * sqrt(epsilon / mass); // 450 [m/s]
-  float k_B = 1;                                             // 1.380649 * pow(10, -23) [m^2*kg/(s^2*K)] // ili računam preko neke T pa dobijem neš na 10^-2?
+  float sigma = 1;                                         // 3.4 * 10^(-10) [m]
+  float epsilon = 1;                                       // 1.65 * 10^(-21) [J]
+  float mass = 1;                                          // 6.69 * 10^(-26) [kg]
+  float rho = 1.0481 * pow(10, -3) * mass / pow(sigma, 3); // 1.784 [kg/m^3]
+  float L0 = 10 * sigma * cbrt(N / 1.0481);                // L0 = cbrt(N*m/rho)
+  float v_avg = 2.8654 * sqrt(epsilon / mass);             // 450 [m/s]
+  float k_B = 1;                                           // 1.380649 * pow(10, -23) [m^2*kg/(s^2*K)] // ili računam preko neke T pa dobijem neš na 10^-2?
   // veličine:
   float x[Nw + 1][N + 1]; // broj šetača, broj čestica
   float y[Nw + 1][N + 1]; // broj šetača, broj čestica
