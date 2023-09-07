@@ -5,7 +5,7 @@
 #include <math.h>
 #include "ran1.c"
 
-#define N 100    // broj čestica
+#define N 1000   // broj čestica
 #define Nw 10    // broj šetača
 #define Nk 100   // broj koraka
 #define Nb 10    // broj blokova
@@ -316,7 +316,6 @@ int main(void)
       block_avg_T = block_avg_T / Nk;
       block_avg_p = block_avg_p / Nk;
       fprintf(block_data, "%d\t%f\t%f\t%f\t%f\t%f\n", ib * Nk, block_avg_L, block_avg_V, block_avg_U, block_avg_T, block_avg_p);
-      // printf("%d\t%f\t%f\t%f\t%f\t%f\n", ib, block_avg_L, block_avg_V, block_avg_U, block_avg_T, block_avg_p);
     }
   }
   printf("Final ratio: %f\n", ratio);
