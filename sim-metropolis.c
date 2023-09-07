@@ -202,9 +202,10 @@ int main(void)
           V[j] = L[j] * L[j] * L[j];
           for (k = 1; k <= N; k++) // po česticama
           {
-            x[j][k] = L[j] / L_old * x[j][k]; // skaliranje svih x koordinata faktorom L'/L
-            y[j][k] = L[j] / L_old * y[j][k]; // skaliranje svih y koordinata faktorom L'/L
-            z[j][k] = L[j] / L_old * z[j][k]; // skaliranje svih z koordinata faktorom L'/L
+            // skaliranje svih koordinata faktorom L'/L
+            x[j][k] = L[j] / L_old * x[j][k];
+            y[j][k] = L[j] / L_old * y[j][k];
+            z[j][k] = L[j] / L_old * z[j][k];
           }
         }
         // ponovno računanje termodinamičkih vrijednosti
@@ -260,7 +261,7 @@ int main(void)
 #pragma endregion
         // kraj petlje šetača
       }
-      // // Maksimalnu duljinu koraka podesavamo kako bi prihvacanje bilo oko 50%
+      // Maksimalnu duljinu koraka podesavamo kako bi prihvacanje bilo oko 50%
       if (ratio > 0.5)
       {
         dxyzMax = dxyzMax * 1.05;
