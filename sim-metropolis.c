@@ -124,12 +124,12 @@ int main(void)
     {
       // dobro je da su sve čestice na početku udaljene barem za σ.
       x0 = ran1(&idum) * L0; // ran1(&idum) = random broj iz[0, 1]
-      y0 = ran1(&idum) * L0; // ran1(&idum) = random broj iz[0, 1]
-      z0 = ran1(&idum) * L0; // ran1(&idum) = random broj iz[0, 1]
+      y0 = ran1(&idum) * L0;
+      z0 = ran1(&idum) * L0;
       v0 = ran1(&idum) * (vmax - vmin) + vmin;
       x[i][j] = x0; // broj šetača, broj čestica
-      y[i][j] = y0; // broj šetača, broj čestica
-      z[i][j] = z0; // broj šetača, broj čestica
+      y[i][j] = y0;
+      z[i][j] = z0;
       v[i][j] = v0;
     }
     // računamo unutarnju energiju početne konfiguracije
