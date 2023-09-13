@@ -6,9 +6,9 @@
 #include "ran1.c"
 
 #define N 100    // broj čestica
-#define Nw 1     // broj šetača
+#define Nw 10    // broj šetača
 #define Nk 10    // broj koraka
-#define Nb 1000  // broj blokova
+#define Nb 100   // broj blokova
 #define Nbskip 0 // broj blokova koje preskačemo radi stabilizacije
 
 float lennardJones_reduced(float x1, float x2, float y1, float y2, float z1, float z2, float sigma)
@@ -68,14 +68,14 @@ int main(void)
   int i, j, k, ib;
   long idum = -1234;
   // konstante:
-  float sigma = 1;                     // 3.4 * 10^(-10) [m]
-  float epsilon = 1;                   // 1.65 * 10^(-21) [J]
-  float L0 = sigma * cbrt(N / 1.0481); // L0 = cbrt(N*m/rho)
+  float sigma = 1;                          // 3.4 * 10^(-10) [m]
+  float epsilon = 1;                        // 1.65 * 10^(-21) [J]
+  float L0 = 10 * sigma * cbrt(N / 1.0481); // L0 = cbrt(N*m/rho)
   float V0 = L0 * L0 * L0;
-  float k_B = 1;                                              // 1.380649 * pow(10, -23) [m^2*kg/(s^2*K)]
-  float T0 = 2.5 * epsilon / k_B;                             // ~300K
-  float Uk = 3 / 2 * k_B * N * T0;                            // svaka komponenta daje doprinos kb*T/2
-  float p0 = 2.38206 * pow(10, -2) * epsilon / pow(sigma, 3); // ~100000 N/m
+  float k_B = 1;                   // 1.380649 * pow(10, -23) [m^2*kg/(s^2*K)]
+  float T0 = 2.5 * epsilon / k_B;  // ~300K
+  float Uk = 3 / 2 * k_B * N * T0; // svaka komponenta daje doprinos kb*T/2
+  float p0;
   // veličine:
   float x[Nw + 1][N + 1]; // broj šetača, broj čestica
   float y[Nw + 1][N + 1]; // broj šetača, broj čestica
@@ -131,9 +131,9 @@ int main(void)
     Up[i] = 4 * epsilon * Sum_Ulj_reduced(x, y, z, sigma, i); // Upot = Sum(i=1,...,N)Sum(j=i+1,...,N) 4*epsilon*((sigma/r_ij)^12-(sigma/r_ij)^6)
     U[i] = Uk + Up[i];                                        // U_ukupna = Ukin + Upot
     press[i] = 1 / V[i] * (N * k_B * T0 - epsilon / (3 * k_B * T0) * Sum_rf_reduced(x, y, z, sigma, i));
+    p0 = press[i];
     printf("Pocetna konfiguracija: L=%f, L0=%f, V=%f, Up=%f, U=%f, p=%f, p0=%f\n", L[i], L0, V[i], Up[i], U[i], press[i], p0);
   }
-
   SbL = 0;
   SbV = 0;
   SbU = 0;
@@ -250,10 +250,10 @@ int main(void)
           ratio = (float)accepted / (float)(accepted + rejected);
           // printf("prihvaceno, ratio: %f\n", ratio);
         }
-        SwL = SwL + L[j] / (float)Nw;
-        SwV = SwV + V[j] / (float)Nw;
-        SwU = SwU + U[j] / (float)Nw;
-        Swp = Swp + press[j] / (float)Nw;
+        SwL = SwL + L[j];
+        SwV = SwV + V[j];
+        SwU = SwU + U[j];
+        Swp = Swp + press[j];
         // kraj petlje šetača
       }
       // Maksimalnu duljinu koraka podesavamo kako bi prihvacanje bilo oko 50%
@@ -288,8 +288,8 @@ int main(void)
       SbV2 += SkV / (float)(Nk * Nk);
       SbU2 += SkU / (float)(Nk * Nk);
       Sbp2 += Skp / (float)(Nk * Nk);
-      fprintf(data, "%d\t%f\t%f\t%f\t%f\n", ib, SkL / (float)Nk, SkV / (float)Nk, SkU / (float)Nk, Skp / (float)Nk);
-      fprintf(block_data, "%d\t%f\t%f\t%f\t%f\n", ib, SbL / (float)ib, SbV / (float)ib, SbU / (float)ib, Sbp / (float)ib);
+      fprintf(data, "%d\t%f\t%f\t%f\t%f\t%f\n", ib, SbL / (float)ib, SbV / (float)ib, SbU / (float)ib, Sbp / (float)ib, p0);
+      fprintf(block_data, "%d\t%f\t%f\t%f\t%f\n", ib, SkL / (float)Nk, SkV / (float)Nk, SkU / (float)Nk, Skp / (float)Nk);
     }
   }
   printf("Prihvacenost: %f\n", ratio);
