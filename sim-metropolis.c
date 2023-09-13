@@ -7,7 +7,7 @@
 
 #define N 1000   // broj čestica
 #define Nw 10    // broj šetača
-#define Nk 10    // broj koraka
+#define Nk 20    // broj koraka
 #define Nb 100   // broj blokova
 #define Nbskip 0 // broj blokova koje preskačemo radi stabilizacije
 
@@ -81,7 +81,6 @@ int main(void)
   float x[Nw + 1][N + 1]; // broj šetača, broj čestica
   float y[Nw + 1][N + 1]; // broj šetača, broj čestica
   float z[Nw + 1][N + 1]; // broj šetača, broj čestica
-  float v[Nw + 1][N + 1]; // brzine čestica
   float L[Nw + 1];        // stranica
   float V[Nw + 1];        // volumen
   float U[Nw + 1];        // unutarnja energija (Upot + Ukin)
