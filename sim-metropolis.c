@@ -5,10 +5,10 @@
 #include <math.h>
 #include "ran1.c"
 
-#define N 100    // broj čestica
+#define N 1000   // broj čestica
 #define Nw 10    // broj šetača
 #define Nk 10    // broj koraka
-#define Nb 1000  // broj blokova
+#define Nb 100   // broj blokova
 #define Nbskip 0 // broj blokova koje preskačemo radi stabilizacije
 
 float lennardJones_reduced(float x1, float x2, float y1, float y2, float z1, float z2, float sigma)
@@ -69,9 +69,9 @@ int main(void)
   int i, j, k, ib;
   long idum = -1234;
   // konstante:
-  float sigma = 1;                     // 3.4 * 10^(-10) [m]
-  float epsilon = 1;                   // 1.65 * 10^(-21) [J]
-  float L0 = sigma * cbrt(N / 1.0481); // L0 = cbrt(N*m/rho)
+  float sigma = 1;                          // 3.4 * 10^(-10) [m]
+  float epsilon = 1;                        // 1.65 * 10^(-21) [J]
+  float L0 = 10 * sigma * cbrt(N / 1.0481); // L0 = cbrt(N*m/rho)
   float V0 = L0 * L0 * L0;
   float k_B = 1;                   // 1.380649 * pow(10, -23) [m^2*kg/(s^2*K)]
   float T0 = 2.5 * epsilon / k_B;  // ~300K
@@ -301,14 +301,10 @@ int main(void)
   avg_U = SbU / (float)Nb;
   avg_p = Sbp / (float)Nb;
   // standardne devijacije
-  sig_L = sqrt(((SbL2 / (float)Nb) - avg_L * avg_L) / (float)(Nb - 1));
-  sig_V = sqrt(((SbV2 / (float)Nb) - avg_V * avg_V) / (float)(Nb - 1));
-  sig_U = sqrt(((SbU2 / (float)Nb) - avg_U * avg_U) / (float)(Nb - 1));
-  sig_p = sqrt(((Sbp2 / (float)Nb) - avg_p * avg_p) / (float)(Nb - 1));
-  printf("L_avg=%f; sigma_L=%f\n", avg_L, sig_L);
-  printf("V_avg=%f; sigma_V=%f\n", avg_V, sig_V);
-  printf("U_avg=%f; sigma_U=%f\n", avg_U, sig_U);
-  printf("p_avg=%f; sigma_p=%f\n", avg_p, sig_p);
+  printf("L_avg=%f \n", avg_L);
+  printf("V_avg=%f\n", avg_V);
+  printf("U_avg=%f\n", avg_U);
+  printf("p_avg=%f\n", avg_p);
 
   fclose(data);
   fclose(block_data);
