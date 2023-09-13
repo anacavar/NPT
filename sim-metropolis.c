@@ -8,7 +8,7 @@
 #define N 100    // broj čestica
 #define Nw 10    // broj šetača
 #define Nk 10    // broj koraka
-#define Nb 100   // broj blokova
+#define Nb 1000  // broj blokova
 #define Nbskip 0 // broj blokova koje preskačemo radi stabilizacije
 
 float lennardJones_reduced(float x1, float x2, float y1, float y2, float z1, float z2, float sigma)
@@ -17,7 +17,7 @@ float lennardJones_reduced(float x1, float x2, float y1, float y2, float z1, flo
   float x = sigma / sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2) + pow((z2 - z1), 2)); // x = sigma/r
   x = pow(x, 6);                                                                     // x = (sigma/r)**6
   // ignoriraj parove koji su preblizu kako potencijal ne bi divergirao (nije fizikalno da su atomi previše blizu)
-  if (x <= 1.5)
+  if (x <= 2)
     Ulj_red = (pow(x, 2) - x);
   else
     Ulj_red = 0;
@@ -29,7 +29,8 @@ float rxLJforce_reduced(float x1, float x2, float y1, float y2, float z1, float 
   float product;
   float x = sigma / sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2) + pow((z2 - z1), 2)); // x = sigma/r
   x = pow(x, 6);                                                                     // x = (sigma/r)**6
-  if (x <= 1)
+  // ignoriraj parove koji su preblizu kako potencijal ne bi divergirao (nije fizikalno da su atomi previše blizu)
+  if (x <= 2)
     product = 24 * (2 * pow(x, 2) - x);
   else
     product = 0;
@@ -68,14 +69,14 @@ int main(void)
   int i, j, k, ib;
   long idum = -1234;
   // konstante:
-  float sigma = 1;                          // 3.4 * 10^(-10) [m]
-  float epsilon = 1;                        // 1.65 * 10^(-21) [J]
-  float L0 = 10 * sigma * cbrt(N / 1.0481); // L0 = cbrt(N*m/rho)
+  float sigma = 1;                     // 3.4 * 10^(-10) [m]
+  float epsilon = 1;                   // 1.65 * 10^(-21) [J]
+  float L0 = sigma * cbrt(N / 1.0481); // L0 = cbrt(N*m/rho)
   float V0 = L0 * L0 * L0;
   float k_B = 1;                   // 1.380649 * pow(10, -23) [m^2*kg/(s^2*K)]
   float T0 = 2.5 * epsilon / k_B;  // ~300K
   float Uk = 3 / 2 * k_B * N * T0; // svaka komponenta daje doprinos kb*T/2
-  float p0;
+  float p0 = 1.5 * epsilon / pow(sigma, 3);
   // veličine:
   float x[Nw + 1][N + 1]; // broj šetača, broj čestica
   float y[Nw + 1][N + 1]; // broj šetača, broj čestica
@@ -131,7 +132,6 @@ int main(void)
     Up[i] = 4 * epsilon * Sum_Ulj_reduced(x, y, z, sigma, i); // Upot = Sum(i=1,...,N)Sum(j=i+1,...,N) 4*epsilon*((sigma/r_ij)^12-(sigma/r_ij)^6)
     U[i] = Uk + Up[i];                                        // U_ukupna = Ukin + Upot
     press[i] = 1 / V[i] * (N * k_B * T0 - epsilon / (3 * k_B * T0) * Sum_rf_reduced(x, y, z, sigma, i));
-    p0 = press[i];
     printf("Pocetna konfiguracija: L=%f, L0=%f, V=%f, Up=%f, U=%f, p=%f, p0=%f\n", L[i], L0, V[i], Up[i], U[i], press[i], p0);
   }
   SbL = 0;
@@ -215,7 +215,7 @@ int main(void)
         // Metropolis algoritam
         if (delta_W > 0)
         {
-          // printf("korak: %d; setac: %d; V=%f, dV=%f, U=%f, dU=%f, dH=%f, dW=%f => p=%f\n", i, j, V[j], delta_V, U[j], delta_U, delta_H, delta_W, exp(-delta_W));
+          // printf("korak: %d; setac: %d; V=%f, dV=%f, Up=%f, U=%f, dU=%f, dH=%f, dW=%f => p=%f\n", i, j, V[j], delta_V, Up[j], U[j], delta_U, delta_H, delta_W, exp(-delta_W));
           p = exp(-delta_W); // vjerojatnost prihvaćanja promjene
           ran = ran1(&idum);
           if (ran < p)
@@ -245,7 +245,7 @@ int main(void)
         }
         else
         {
-          // printf("korak: %d; setac: %d; V=%f, dV=%f, U=%f, dU=%f, dH=%f, dW=%f\n", i, j, V[j], delta_V, U[j], delta_U, delta_H, delta_W);
+          // printf("korak: %d; setac: %d; V=%f, dV=%f, Up=%f, U=%f, dU=%f, dH=%f, dW=%f\n", i, j, V[j], delta_V, Up[j], U[j], delta_U, delta_H, delta_W);
           accepted++;
           ratio = (float)accepted / (float)(accepted + rejected);
           // printf("prihvaceno, ratio: %f\n", ratio);
@@ -291,6 +291,7 @@ int main(void)
       fprintf(data, "%d\t%f\t%f\t%f\t%f\t%f\n", ib, SbL / (float)ib, SbV / (float)ib, SbU / (float)ib, Sbp / (float)ib, p0);
       fprintf(block_data, "%d\t%f\t%f\t%f\t%f\n", ib, SkL / (float)Nk, SkV / (float)Nk, SkU / (float)Nk, Skp / (float)Nk);
     }
+    // kraj blok levela
   }
   printf("Prihvacenost: %f\n", ratio);
 
