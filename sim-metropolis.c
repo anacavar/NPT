@@ -5,7 +5,7 @@
 #include <math.h>
 #include "ran1.c"
 
-#define N 1000   // broj čestica
+#define N 64     // broj čestica
 #define Nw 10    // broj šetača
 #define Nk 20    // broj koraka
 #define Nb 100   // broj blokova
@@ -16,7 +16,6 @@ float lennardJones_reduced(float x1, float x2, float y1, float y2, float z1, flo
   float Ulj_red;
   float x = sigma / sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2) + pow((z2 - z1), 2)); // x = sigma/r
   x = pow(x, 6);                                                                     // x = (sigma/r)**6
-  // ignoriraj parove koji su preblizu kako potencijal ne bi divergirao (nije fizikalno da su atomi previše blizu)
   if (x <= 2)
     Ulj_red = (pow(x, 2) - x);
   else
@@ -29,7 +28,6 @@ float rxLJforce_reduced(float x1, float x2, float y1, float y2, float z1, float 
   float product;
   float x = sigma / sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2) + pow((z2 - z1), 2)); // x = sigma/r
   x = pow(x, 6);                                                                     // x = (sigma/r)**6
-  // ignoriraj parove koji su preblizu kako potencijal ne bi divergirao (nije fizikalno da su atomi previše blizu)
   if (x <= 2)
     product = 24 * (2 * pow(x, 2) - x);
   else
@@ -73,10 +71,10 @@ int main(void)
   float epsilon = 1;                        // 1.65 * 10^(-21) [J]
   float L0 = 10 * sigma * cbrt(N / 1.0481); // L0 = cbrt(N*m/rho)
   float V0 = L0 * L0 * L0;
-  float k_B = 1;                   // 1.380649 * pow(10, -23) [m^2*kg/(s^2*K)]
-  float T0 = 2.5 * epsilon / k_B;  // ~300K
-  float Uk = 3 / 2 * k_B * N * T0; // svaka komponenta daje doprinos kb*T/2
-  float p0 = 1.5 * epsilon / pow(sigma, 3);
+  float k_B = 1;                             // 1.380649 * pow(10, -23) [m^2*kg/(s^2*K)]
+  float T0 = 2.5 * epsilon / k_B;            // ~300K
+  float Uk = 3 / 2 * k_B * N * T0;           // svaka komponenta daje doprinos kb*T/2
+  float p0 = 1430 * epsilon / pow(sigma, 3); // ~100000Pa
   // veličine:
   float x[Nw + 1][N + 1]; // broj šetača, broj čestica
   float y[Nw + 1][N + 1]; // broj šetača, broj čestica
@@ -108,22 +106,32 @@ int main(void)
   float sig_L, sig_V, sig_U, sig_p; // standardna devijacija
 #pragma endregion
 
-  FILE *data, *block_data;
+  FILE *data, *block_data, *koordinate;
   data = fopen("data.txt", "w");
   block_data = fopen("block_data.txt", "w");
+  koordinate = fopen("koordinate.txt", "w");
 
-  // inicijalizacija čestica
+  // inicijalizacija čestica - NAPRAVI PRAVILNU STRUKTURU!!
   for (i = 1; i <= Nw; i++) // po šetačima
   {
-    for (j = 1; j <= N; j++) // po česticama
+    // #Calculate the minimum grid size required to accommodate N atoms
+    int grid_size = (int)cbrt(N);
+    float dL0 = L0 / 100;
+    // #Generate the coordinates for each atom in the grid
+    for (int a = 0; a < grid_size; a++) // x
     {
-      // dobro je da su sve čestice na početku udaljene barem za σ.
-      x0 = ran1(&idum) * L0; // ran1(&idum) = random broj iz[0, 1]
-      y0 = ran1(&idum) * L0;
-      z0 = ran1(&idum) * L0;
-      x[i][j] = x0; // broj šetača, broj čestica
-      y[i][j] = y0;
-      z[i][j] = z0;
+      for (int b = 0; b < grid_size; b++) // y
+      {
+        for (int c = 0; c < grid_size; c++) // z
+        {
+          // #Calculate the coordinates of the atom
+          x[i][a] = a * dL0;
+          y[i][b] = b * dL0;
+          z[i][j] = c * dL0;
+          printf("grid size:%d; a=%d, b=%d, c=%d\n", grid_size, a, b, c);
+          fprintf(koordinate, "%f\t%f\n", x[i][a], y[i][b]);
+        }
+      }
     }
     // računamo unutarnju energiju početne konfiguracije
     L[i] = L0;
@@ -133,6 +141,7 @@ int main(void)
     press[i] = 1 / V[i] * (N * k_B * T0 - epsilon / (3 * k_B * T0) * Sum_rf_reduced(x, y, z, sigma, i));
     printf("Pocetna konfiguracija: L=%f, L0=%f, V=%f, Up=%f, U=%f, p=%f, p0=%f\n", L[i], L0, V[i], Up[i], U[i], press[i], p0);
   }
+
   SbL = 0;
   SbV = 0;
   SbU = 0;
@@ -307,5 +316,6 @@ int main(void)
 
   fclose(data);
   fclose(block_data);
+  fclose(koordinate);
   return 0;
 }
