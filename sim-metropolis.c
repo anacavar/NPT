@@ -180,7 +180,7 @@ int main(void)
           x[j][k] += dx;
           y[j][k] += dy;
           z[j][k] += dz;
-          // rubni uvjeti
+          // rubni uvjeti - IMPLEMENTIRAJ PERIODIČNE RUBNE UVJETE!!!!!!!
           if (x[j][k] < 0)
             x[j][k] = -x[j][k];
           if (x[j][k] > L[j])
